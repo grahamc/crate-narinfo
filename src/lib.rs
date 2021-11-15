@@ -50,17 +50,17 @@ pub struct NarInfo {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-enum NarInfoDatum {
-    Compression(String),
+enum NarInfoDatum<'a> {
+    Compression(&'a str),
     Deriver(DerivationId),
-    FileHash(String),
+    FileHash(&'a str),
     FileSize(u64),
-    NarHash(String),
+    NarHash(&'a str),
     NarSize(u64),
     References(Vec<NarInfoId>),
-    Sig(String),
+    Sig(&'a str),
     StorePath(PathBuf),
-    Url(String),
+    Url(&'a str),
 }
 
 #[derive(PartialEq, Eq, Debug)]
