@@ -89,6 +89,14 @@ mod tests {
     use super::*;
 
     #[test]
+    fn parse_line_badly_formatted() {
+        assert_eq!(
+            NarInfo::parse_line("hello goodbye"),
+            Err(ParseErr::LineCorruptNoColon("hello goodbye"))
+        );
+    }
+
+    #[test]
     fn parse_line_narsize() {
         assert_eq!(
             NarInfo::parse_line("NarSize: 234987234"),
