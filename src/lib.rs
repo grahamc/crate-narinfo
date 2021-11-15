@@ -51,16 +51,16 @@ pub struct NarInfo {
 
 #[derive(PartialEq, Eq, Debug)]
 enum NarInfoDatum {
-    StorePath(PathBuf),
-    Url(String),
     Compression(String),
+    Deriver(DerivationId),
     FileHash(String),
     FileSize(u64),
     NarHash(String),
     NarSize(u64),
     References(Vec<NarInfoId>),
-    Deriver(DerivationId),
     Sig(String),
+    StorePath(PathBuf),
+    Url(String),
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -86,8 +86,8 @@ impl NarInfo {
         let remainder = remainder.trim();
 
         match key {
-            "NarSize" => Ok(NarInfoDatum::NarSize(Self::parse_u64(key, remainder)?)),
             "FileSize" => Ok(NarInfoDatum::FileSize(Self::parse_u64(key, remainder)?)),
+            "NarSize" => Ok(NarInfoDatum::NarSize(Self::parse_u64(key, remainder)?)),
             unknown_key => Err(ParseErr::LineUnknownKey(unknown_key)),
         }
     }
