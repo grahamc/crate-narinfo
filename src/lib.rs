@@ -66,6 +66,8 @@ enum NarInfoDatum {
 #[derive(PartialEq, Eq, Debug)]
 enum ParseErr<'a> {
     LineCorruptNoColon(&'a str),
+    LineUnknownKey(&'a str),
+    InvalidU64(&'a str, std::num::ParseIntError),
 }
 
 type ParseResult = Result<NarInfo, ()>;
@@ -76,7 +78,16 @@ impl NarInfo {
             .split_once(":")
             .ok_or(ParseErr::LineCorruptNoColon(line))?;
 
-        Ok(NarInfoDatum::NarSize(1))
+        let remainder = remainder.trim();
+
+        match key {
+            "NarSize" => Ok(NarInfoDatum::NarSize(
+                remainder
+                    .parse::<u64>()
+                    .map_err(|e| ParseErr::InvalidU64(key, e))?,
+            )),
+            unknown_key => Err(ParseErr::LineUnknownKey(unknown_key)),
+        }
     }
 
     pub fn parse_string(nar: String) -> ParseResult {
@@ -94,6 +105,17 @@ mod tests {
             NarInfo::parse_line("hello goodbye"),
             Err(ParseErr::LineCorruptNoColon("hello goodbye"))
         );
+    }
+
+    #[test]
+    fn parse_line_narsize_invalid_digit() {
+        let ret = NarInfo::parse_line("NarSize: abc123");
+
+        if let Err(ParseErr::InvalidU64("NarSize", err)) = ret {
+            assert_eq!(err.kind(), &std::num::IntErrorKind::InvalidDigit);
+        } else {
+            panic!("Bad failure parsing: {:?}", ret);
+        }
     }
 
     #[test]
