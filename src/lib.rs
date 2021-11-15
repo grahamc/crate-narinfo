@@ -73,6 +73,11 @@ enum ParseErr<'a> {
 type ParseResult = Result<NarInfo, ()>;
 
 impl NarInfo {
+    fn parse_u64<'a>(key: &'a str, remainder: &'a str) -> Result<u64, ParseErr<'a>> {
+        remainder
+            .parse::<u64>()
+            .map_err(|e| ParseErr::InvalidU64(key, e))
+    }
     fn parse_line(line: &str) -> Result<NarInfoDatum, ParseErr> {
         let (key, remainder): (&str, &str) = line
             .split_once(":")
@@ -81,11 +86,8 @@ impl NarInfo {
         let remainder = remainder.trim();
 
         match key {
-            "NarSize" => Ok(NarInfoDatum::NarSize(
-                remainder
-                    .parse::<u64>()
-                    .map_err(|e| ParseErr::InvalidU64(key, e))?,
-            )),
+            "NarSize" => Ok(NarInfoDatum::NarSize(Self::parse_u64(key, remainder)?)),
+            "FileSize" => Ok(NarInfoDatum::FileSize(Self::parse_u64(key, remainder)?)),
             unknown_key => Err(ParseErr::LineUnknownKey(unknown_key)),
         }
     }
@@ -108,6 +110,17 @@ mod tests {
     }
 
     #[test]
+    fn parse_u64_invalid_digit() {
+        let ret = NarInfo::parse_u64("FooSize", "abc123");
+
+        if let Err(ParseErr::InvalidU64("FooSize", err)) = ret {
+            assert_eq!(err.kind(), &std::num::IntErrorKind::InvalidDigit);
+        } else {
+            panic!("Bad failure parsing: {:?}", ret);
+        }
+    }
+
+    #[test]
     fn parse_line_narsize_invalid_digit() {
         let ret = NarInfo::parse_line("NarSize: abc123");
 
@@ -123,6 +136,14 @@ mod tests {
         assert_eq!(
             NarInfo::parse_line("NarSize: 234987234"),
             Ok(NarInfoDatum::NarSize(234987234))
+        );
+    }
+
+    #[test]
+    fn parse_line_filesize() {
+        assert_eq!(
+            NarInfo::parse_line("FileSize: 987987"),
+            Ok(NarInfoDatum::FileSize(987987))
         );
     }
 }
