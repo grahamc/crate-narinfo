@@ -2,10 +2,12 @@ use std::path::PathBuf;
 
 /// The hash-name part of a store path
 /// ie: xmxgxig6zxrixicc7905ssgb4yc3lysa-bash-interactive-4.4-p23
+#[derive(PartialEq, Eq, Debug)]
 pub struct NarInfoId(String);
 
 /// The hash-name part of a derivation's store path.
 /// ie: a6xizp18g0sch9z7493p3irq632kzlym-bash-interactive-4.4-p23.drv
+#[derive(PartialEq, Eq, Debug)]
 pub struct DerivationId(String);
 
 /// A parsed NarInfo file, which can be fetched from
@@ -47,10 +49,50 @@ pub struct NarInfo {
     pub signature: String,
 }
 
+#[derive(PartialEq, Eq, Debug)]
+enum NarInfoDatum {
+    StorePath(PathBuf),
+    Url(String),
+    Compression(String),
+    FileHash(String),
+    FileSize(u64),
+    NarHash(String),
+    NarSize(u64),
+    References(Vec<NarInfoId>),
+    Deriver(DerivationId),
+    Sig(String),
+}
+
+#[derive(PartialEq, Eq, Debug)]
+enum ParseErr<'a> {
+    LineCorruptNoColon(&'a str),
+}
+
+type ParseResult = Result<NarInfo, ()>;
+
+impl NarInfo {
+    fn parse_line(line: &str) -> Result<NarInfoDatum, ParseErr> {
+        let (key, remainder): (&str, &str) = line
+            .split_once(":")
+            .ok_or(ParseErr::LineCorruptNoColon(line))?;
+
+        Ok(NarInfoDatum::NarSize(1))
+    }
+
+    pub fn parse_string(nar: String) -> ParseResult {
+        todo!();
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn parse_line_narsize() {
+        assert_eq!(
+            NarInfo::parse_line("NarSize: 234987234"),
+            Ok(NarInfoDatum::NarSize(234987234))
+        );
     }
 }
