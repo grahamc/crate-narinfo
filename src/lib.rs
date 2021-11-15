@@ -96,6 +96,9 @@ impl NarInfo {
         let remainder = remainder.trim();
 
         match key {
+            "Compression" => Ok(NarInfoDatum::Compression(Self::parse_str_no_spaces(
+                key, remainder,
+            )?)),
             "FileSize" => Ok(NarInfoDatum::FileSize(Self::parse_u64(key, remainder)?)),
             "NarSize" => Ok(NarInfoDatum::NarSize(Self::parse_u64(key, remainder)?)),
             unknown_key => Err(ParseErr::LineUnknownKey(unknown_key)),
@@ -170,6 +173,14 @@ mod tests {
         assert_eq!(
             NarInfo::parse_line("FileSize: 987987"),
             Ok(NarInfoDatum::FileSize(987987))
+        );
+    }
+
+    #[test]
+    fn parse_line_compression() {
+        assert_eq!(
+            NarInfo::parse_line("Compression: xz"),
+            Ok(NarInfoDatum::Compression("xz"))
         );
     }
 }
