@@ -68,16 +68,26 @@ enum ParseErr<'a> {
     LineCorruptNoColon(&'a str),
     LineUnknownKey(&'a str),
     InvalidU64(&'a str, std::num::ParseIntError),
+    UnexpectedSpace(&'a str, usize),
 }
 
 type ParseResult = Result<NarInfo, ()>;
 
 impl NarInfo {
+    fn parse_str_no_spaces<'a>(key: &'a str, remainder: &'a str) -> Result<&'a str, ParseErr<'a>> {
+        if let Some(position) = remainder.find(' ') {
+            return Err(ParseErr::UnexpectedSpace(key, position));
+        }
+
+        Ok(remainder)
+    }
+
     fn parse_u64<'a>(key: &'a str, remainder: &'a str) -> Result<u64, ParseErr<'a>> {
         remainder
             .parse::<u64>()
             .map_err(|e| ParseErr::InvalidU64(key, e))
     }
+
     fn parse_line(line: &str) -> Result<NarInfoDatum, ParseErr> {
         let (key, remainder): (&str, &str) = line
             .split_once(":")
@@ -118,6 +128,22 @@ mod tests {
         } else {
             panic!("Bad failure parsing: {:?}", ret);
         }
+    }
+
+    #[test]
+    fn parse_str_unexpected_space_err() {
+        assert_eq!(
+            NarInfo::parse_str_no_spaces("FooStr", "foo bar baz"),
+            Err(ParseErr::UnexpectedSpace("FooStr", 3))
+        );
+    }
+
+    #[test]
+    fn parse_str_unexpected_space() {
+        assert_eq!(
+            NarInfo::parse_str_no_spaces("FooStr", "foobarbaz"),
+            Ok("foobarbaz")
+        );
     }
 
     #[test]
